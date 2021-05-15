@@ -1,0 +1,97 @@
+// ### Create UI Layout ###
+var mainPanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('horizontal'),
+  style: {width: '300px'}
+});
+
+var datesSelectorPanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('vertical')
+});
+mainPanel.add(datesSelectorPanel);
+var dateSelectorLabel = ui.Label('Date Filter Selector');
+dateSelectorLabel.style().set({fontSize: '20px'})
+datesSelectorPanel.add(dateSelectorLabel);
+
+var startDatePanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('horizontal')
+});
+datesSelectorPanel.add(startDatePanel);
+startDatePanel.add(ui.Label('Start Date: '));
+
+var endDatePanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('horizontal')
+});
+datesSelectorPanel.add(endDatePanel);
+endDatePanel.add(ui.Label('End Date: '));
+
+// ### Create Date Selector Widgets ###
+
+// Import baseline ImageCollection
+var collection = ee.ImageCollection('COPERNICUS/S2_SR');
+
+// Use the start of the collection and now to bound the slider.
+var start = ee.Image(collection.first()).date().get('year').format();
+var now = Date.now();
+var end = ee.Date(now).format();
+
+// Run this function on a change of the dateSlider.
+var showMosaic = function(range) {
+  // var mosaic = ee.Algorithms.Landsat.simpleComposite({
+  //   collection: collection.filterDate(range.start(), range.end())
+  // });
+  // // Asynchronously compute the name of the composite.  Display it.
+  // range.start().get('year').evaluate(function(name) {
+  //   var visParams = {bands: ['B4', 'B3', 'B2'], max: 100};
+  //   var layer = ui.Map.Layer(mosaic, visParams, name + ' composite');
+  //   Map.layers().set(0, layer);
+  // });
+  Map.layers().set(0, collection.filter(ee.Filter.date(range.start(), range.end())))
+};
+
+// Global Range Adjusting
+var globalRange = ee.DateRange(start, end);
+
+var changeStart = function(range) {
+  globalRange = ee.DateRange(range.start(), globalRange.end());
+  
+  showMosaic(globalRange);
+  
+  print(globalRange);
+}
+
+var changeEnd = function(range) {
+  globalRange = ee.DateRange(globalRange.start(), range.end());
+  
+  showMosaic(globalRange);
+  
+  print(globalRange);
+}
+
+// Asynchronously compute the date range and show the slider.
+var startDateRange = globalRange.evaluate(function(range) {
+  var startDateSlider = ui.DateSlider({
+    start: range['dates'][0],
+    end: range['dates'][1],
+    value: null,
+    period: 1,
+    style: {width: '200px'},
+    onChange: changeStart
+  });
+  startDatePanel.add(startDateSlider.setValue(range['dates'][0]));
+});
+
+var endDateRange = globalRange.evaluate(function(range) {
+  var endDateSlider = ui.DateSlider({
+    start: range['dates'][0],
+    end: range['dates'][1],
+    value: null,
+    period: 1,
+    style: {width: '200px'},
+    onChange: changeEnd
+  });
+  endDatePanel.add(endDateSlider.setValue(now));
+});
+
+// ### Configure and Add UI ###
+// ui.root.clear();
+ui.root.add(mainPanel);
