@@ -106,7 +106,7 @@ var startDateRange = prefs.date_range.evaluate(function(range) {
     end: range['dates'][1],
     value: null,
     period: 1,
-    style: {width: '200px'},
+    style: {stretch: 'horizontal'},
     onChange: changeStart
   });
   startDatePanel.add(startDateSlider.setValue(range['dates'][0]));
@@ -118,7 +118,7 @@ var endDateRange = prefs.date_range.evaluate(function(range) {
     end: range['dates'][1],
     value: null,
     period: 1,
-    style: {width: '200px'},
+    style: {stretch: 'horizontal'},
     onChange: changeEnd
   });
   endDatePanel.add(endDateSlider.setValue(globalNow));
