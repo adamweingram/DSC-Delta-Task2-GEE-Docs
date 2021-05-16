@@ -1,3 +1,13 @@
+// ## Initial Imports and Global Variables ###
+
+// Import baseline ImageCollection
+var collection = ee.ImageCollection('COPERNICUS/S2_SR');
+
+// Use the start of the collection and now to bound the slider.
+var globalStart = ee.Image(collection.first()).date().get('year').format();
+var globalNow = Date.now();
+var globalEnd = ee.Date(globalNow).format();
+
 // ### Initial Script Preferences ###
 // Note: Some of these are modified by UI widgets!
 var prefs = {
@@ -6,7 +16,8 @@ var prefs = {
   "index_nir": "B8",
   "index_red": "B4",
   "index_blue": "B2",
-  "l_correction_factor": 0.5
+  "l_correction_factor": 0.5,
+  "date_range": ee.DateRange(globalStart, globalEnd)
 }
 
 // ### Create UI Layout ###
@@ -54,14 +65,6 @@ endDatePanel.add(ui.Label('End Date: '));
 
 // ### Create Date Selector Widgets ###
 
-// Import baseline ImageCollection
-var collection = ee.ImageCollection('COPERNICUS/S2_SR');
-
-// Use the start of the collection and now to bound the slider.
-var start = ee.Image(collection.first()).date().get('year').format();
-var now = Date.now();
-var end = ee.Date(now).format();
-
 // Run this function on a change of the dateSlider.
 var showMosaic = function(range) {
   // var mosaic = ee.Algorithms.Landsat.simpleComposite({
@@ -76,27 +79,24 @@ var showMosaic = function(range) {
   Map.layers().set(0, collection.filter(ee.Filter.date(range.start(), range.end())))
 };
 
-// Global Range Adjusting
-var globalRange = ee.DateRange(start, end);
-
 var changeStart = function(range) {
-  globalRange = ee.DateRange(range.start(), globalRange.end());
+  prefs.date_range = ee.DateRange(range.start(), prefs.date_range.end());
   
-  showMosaic(globalRange);
+  showMosaic(prefs.date_range);
   
-  print(globalRange);
+  print(prefs.date_range);
 }
 
 var changeEnd = function(range) {
-  globalRange = ee.DateRange(globalRange.start(), range.end());
+  prefs.date_range = ee.DateRange(prefs.date_range.start(), range.end());
   
-  showMosaic(globalRange);
+  showMosaic(prefs.date_range);
   
-  print(globalRange);
+  print(prefs.date_range);
 }
 
 // Asynchronously compute the date range and show the slider.
-var startDateRange = globalRange.evaluate(function(range) {
+var startDateRange = prefs.date_range.evaluate(function(range) {
   var startDateSlider = ui.DateSlider({
     start: range['dates'][0],
     end: range['dates'][1],
@@ -108,7 +108,7 @@ var startDateRange = globalRange.evaluate(function(range) {
   startDatePanel.add(startDateSlider.setValue(range['dates'][0]));
 });
 
-var endDateRange = globalRange.evaluate(function(range) {
+var endDateRange = prefs.date_range.evaluate(function(range) {
   var endDateSlider = ui.DateSlider({
     start: range['dates'][0],
     end: range['dates'][1],
@@ -117,7 +117,7 @@ var endDateRange = globalRange.evaluate(function(range) {
     style: {width: '200px'},
     onChange: changeEnd
   });
-  endDatePanel.add(endDateSlider.setValue(now));
+  endDatePanel.add(endDateSlider.setValue(globalNow));
 });
 
 // ### Configure and Add UI ###
