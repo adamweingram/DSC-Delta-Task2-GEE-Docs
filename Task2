@@ -17,6 +17,9 @@ var prefs = {
   "index_red": "B4",
   "index_green": "B3",
   "index_blue": "B2",
+  "preview_red": "TCI_R",
+  "preview_green": "TCI_G",
+  "preview_blue": "TCI_B",
   "l_correction_factor": 0.5,
   "date_range": ee.DateRange(globalStart, globalEnd)
 }
@@ -78,7 +81,7 @@ var showMosaic = function(range) {
   var mosaic = primaryImageCollection.mosaic();
   
   // Display Preview Layer
-  var visParams = {bands: [prefs.index_red, prefs.index_green, prefs.index_blue], max: 10000};
+  var visParams = {bands: [prefs.preview_red, prefs.preview_green, prefs.preview_blue], max: 256};
   var layer = ui.Map.Layer(mosaic, visParams, 'TCI Preview');
   Map.layers().set(0, layer);
 };
