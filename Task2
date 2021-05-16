@@ -77,8 +77,15 @@ var showMosaic = function(range) {
   //   var layer = ui.Map.Layer(mosaic, visParams, name + ' composite');
   //   Map.layers().set(0, layer);
   // });
+  
+  // Re-run filters, etc.
+  primaryImageCollection = primaryImageCollection
+                            .filter(ee.Filter.date(range.start(), range.end()))
+                            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', prefs.ccLimit));
+  
+  // Display Preview Layer
   var visParams = {bands: [prefs.index_red, prefs.index_green, prefs.index_blue], max: 10000};
-  var layer = ui.Map.Layer(primaryImageCollection.filter(ee.Filter.date(range.start(), range.end())), visParams, 'TCI Preview');
+  var layer = ui.Map.Layer(primaryImageCollection, visParams, 'TCI Preview');
   Map.layers().set(0, layer);
 };
 
