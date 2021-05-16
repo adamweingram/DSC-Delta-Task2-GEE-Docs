@@ -1,15 +1,43 @@
+// ### Initial Script Preferences ###
+// Note: Some of these are modified by UI widgets!
+var prefs = {
+  "tile": '10SFH',
+  "ccLimit": 20,
+  "index_nir": "B8",
+  "index_red": "B4",
+  "index_blue": "B2",
+  "l_correction_factor": 0.5
+}
+
 // ### Create UI Layout ###
 var mainPanel = ui.Panel({
-  layout: ui.Panel.Layout.flow('horizontal'),
+  layout: ui.Panel.Layout.flow('vertical'),
   style: {width: '300px'}
 });
 
+// Cloud Filter Items
+var cloudFilterPanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('vertical')
+});
+mainPanel.add(cloudFilterPanel);
+
+var cloudFilterLabel = ui.Label('Cloud Cover Filter (%)');
+cloudFilterLabel.style().set({fontSize: '20px'});
+cloudFilterPanel.add(cloudFilterLabel);
+
+var cloudFilterSlider = ui.Slider(0, 100, prefs.ccLimit, 1, function(value) {
+  prefs.ccLimit = value;
+});
+cloudFilterSlider.style().set({stretch: 'horizontal'});
+cloudFilterPanel.add(cloudFilterSlider);
+
+// Date Filter Items
 var datesSelectorPanel = ui.Panel({
   layout: ui.Panel.Layout.flow('vertical')
 });
 mainPanel.add(datesSelectorPanel);
 var dateSelectorLabel = ui.Label('Date Filter Selector');
-dateSelectorLabel.style().set({fontSize: '20px'})
+dateSelectorLabel.style().set({fontSize: '20px'});
 datesSelectorPanel.add(dateSelectorLabel);
 
 var startDatePanel = ui.Panel({
@@ -95,3 +123,5 @@ var endDateRange = globalRange.evaluate(function(range) {
 // ### Configure and Add UI ###
 // ui.root.clear();
 ui.root.add(mainPanel);
+
+// ### Set Up Processing ###
