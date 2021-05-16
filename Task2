@@ -1,10 +1,10 @@
 // ## Initial Imports and Global Variables ###
 
 // Import baseline ImageCollection
-var collection = ee.ImageCollection('COPERNICUS/S2_SR');
+var primaryImageCollection = ee.ImageCollection('COPERNICUS/S2_SR');
 
 // Use the start of the collection and now to bound the slider.
-var globalStart = ee.Image(collection.first()).date().get('year').format();
+var globalStart = ee.Image(primaryImageCollection.first()).date().get('year').format();
 var globalNow = Date.now();
 var globalEnd = ee.Date(globalNow).format();
 
@@ -68,7 +68,7 @@ endDatePanel.add(ui.Label('End Date: '));
 // Run this function on a change of the dateSlider.
 var showMosaic = function(range) {
   // var mosaic = ee.Algorithms.Landsat.simpleComposite({
-  //   collection: collection.filterDate(range.start(), range.end())
+  //   collection: primaryImageCollection.filterDate(range.start(), range.end())
   // });
   // // Asynchronously compute the name of the composite.  Display it.
   // range.start().get('year').evaluate(function(name) {
@@ -76,7 +76,7 @@ var showMosaic = function(range) {
   //   var layer = ui.Map.Layer(mosaic, visParams, name + ' composite');
   //   Map.layers().set(0, layer);
   // });
-  Map.layers().set(0, collection.filter(ee.Filter.date(range.start(), range.end())))
+  Map.layers().set(0, primaryImageCollection.filter(ee.Filter.date(range.start(), range.end())))
 };
 
 var changeStart = function(range) {
