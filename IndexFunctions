@@ -1,0 +1,562 @@
+/**
+ * IMPORTANT NOTE: You MUST define a custom"prefs" objectin the 
+ * following format in order to properly use these functions!
+ */
+ 
+var prefs = {
+  "tile": '10SFH',
+  "ccLimit": 20,
+  "index_blue": "B2",
+  "index_green": "B3",
+  "index_red": "B4",
+  "index_red_edge_1": "B5",
+  "index_red_edge_2": "B6",
+  "index_red_edge_3": "B7",
+  "index_nir": "B8",
+  "l_correction_factor": 0.5
+}
+
+
+/**
+ * Function to mask clouds using the Sentinel-2 QA band
+ * (From Earth Engine Example)
+ * @param {ee.Image} image Sentinel-2 image
+ * @return {ee.Image} cloud masked Sentinel-2 image
+ */
+exports.maskS2clouds = function(image) {
+  // Save Important Properties
+  var props = {
+    "system:time_start": image.get("system:time_start"),
+    "system:time_end": image.get("system:time_end")
+  }
+  
+  // Select proper band for mask
+  var qa = image.select('QA60')
+
+  // Bits 10 and 11 are clouds and cirrus, respectively.
+  var cloudBitMask = 1 << 10
+  var cirrusBitMask = 1 << 11
+
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+      .and(qa.bitwiseAnd(cirrusBitMask).eq(0))
+
+  // Apply mask and re-add props that were nuked in the operation
+  return image.updateMask(mask).divide(10000).set(props)
+}
+
+/**
+ * Function to calculate NDVI manually given an image and two band IDs
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} nir_band_id: The ID of the NIR band to use
+ * @param {String} red_band_id: The ID of the Red band to use
+ * @return {ee.Image} The original image containing the calculated NDVI as a new band
+ */
+exports.calculateNDVI = function(image, nir_band_id, red_band_id) {
+  var ndvi = image.expression(
+    '(NIR - RED) / (NIR + RED)', {
+      'NIR': image.select(nir_band_id),
+      'RED': image.select(red_band_id)
+  })
+  
+  return image.addBands(ndvi.rename('NDVI'))
+}
+ 
+/**
+ * Function to calculate NDAVI manually given an image and two band IDs
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} nir_band_id: The ID of the NIR band to use
+ * @param {String} blue_band_id: The ID of the Blud band to use
+ * @return {ee.Image} The original image containing the calculated NDAVI as a new band
+ */
+exports.calculateNDAVI = function(image, nir_band_id, blue_band_id) {
+  var ndavi = image.expression(
+    '(NIR - BLUE) / (NIR + BLUE)', {
+      'NIR': image.select(nir_band_id),
+      'BLUE': image.select(blue_band_id)
+  })
+  
+  return image.addBands(ndavi.rename('NDAVI'))
+}
+
+/**
+ * Function to calculate WAVI manually given an image, two band IDs, and the L correction factor
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} nir_band_id: The ID of the NIR band to use
+ * @param {String} blue_band_id: The ID of the Blud band to use
+ * @param {Int} l_correction: The "L" correction factor to use
+ * @return {ee.Image} The original image containing the calculated WAVI as a new band
+ */
+exports.calculateWAVI = function(image, nir_band_id, blue_band_id, l_correction) {
+  var wavi = image.expression(
+    '((NIR - BLUE) / (NIR + BLUE + L)) * (1 + L)', {
+      'NIR': image.select(nir_band_id),
+      'BLUE': image.select(blue_band_id),
+      'L': l_correction
+  })
+  
+  return image.addBands(wavi.rename('WAVI'))
+}
+
+/**
+ * Function to calculate NDVI45 from Frampton et. al. 2013
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} nir_band_id: The ID of the NIR band to use
+ * @param {String} red_band_id: The ID of the red band to use
+ * @return {ee.Image} The original image containing the calculated NDVI45 as a new band
+ */
+exports.calculateNDVI45 = function(image, nir_band_id, red_band_id) {
+  var ndvi45 = image.expression(
+    '(NIR - R)/(NIR + R)', {
+      'NIR': image.select(nir_band_id),
+      'R': image.select(red_band_id)
+    })
+    
+    return image.addBands(ndvi45.rename('NDVI45'))
+}
+
+/**
+ * Function to calculate IRECI from Frampton et. al. 2013
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} nir_band_id: The ID of the NIR band to use
+ * @param {String} red_band_id: The ID of the red band to use
+ * @param {String} red_edge_1_band_id: The ID of the first red edge band to use
+ * @param {string} red_edge_2_band_id: The ID of the second red edge band to use
+ * @return {ee.Image} The original image containing the calculated IRECI as a new band
+ */
+exports.calculateIRECI = function(image, nir_band_id, red_band_id, red_edge_1_band_id, red_edge_2_band_id) {
+  var ireci = image.expression(
+   '(NIR - R)/(RE1 / RE2)', {
+     'NIR': image.select(nir_band_id),
+     'R': image.select(red_band_id),
+     'RE1': image.select(red_edge_1_band_id),
+     'RE2': image.select(red_edge_2_band_id)
+    })
+   
+  return image.addBands(ireci.rename('IRECI'))
+}
+ 
+/**
+ * Function to calculate S2REP from Frampton et. al. 2013
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} nir_band_id: The ID of the NIR band to use
+ * @param {String} red_band_id: The ID of the red band to use
+ * @param {String} red_edge_1_band_id: The ID of the first red edge band to use
+ * @param {string} red_edge_2_band_id: The ID of the second red edge band to use
+ * @return {ee.Image} The original image containing the calculated S2REP as a new band
+ */
+exports.calculateS2REP = function(image, nir_band_id, red_band_id, red_edge_1_band_id, red_edge_2_band_id) {
+  var s2rep = image.expression(
+    '705 + 35 * ((((NIR + R)/2) - RE1)/(RE2 - RE1))', {
+      'NIR': image.select(nir_band_id),
+      'R': image.select(red_band_id),
+      'RE1': image.select(red_edge_1_band_id),
+      'RE2': image.select(red_edge_2_band_id)
+    })
+     
+  return image.addBands(s2rep.rename('S2REP'))
+}
+ 
+/**
+ * Function to calculate GNDVI from Askar et. al. 2018
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} green_band_id: The ID of the green band to use
+ * @param {String} red_edge_band_id: The ID of the red-edge band to use (B7 on S2)
+ * @return {ee.Image} The original image containing the calculated GNDVI as a new band
+ */
+exports.calculateGNDVI = function(image, green_band_id, red_edge_band_id) {
+  var gndvi = image.expression(
+    'RE - G / RE + G', {
+      'G': image.select(green_band_id),
+      'RE': image.select(red_edge_band_id)
+    })
+     
+  return image.addBands(gndvi.rename('GNDVI'))
+}
+ 
+/**
+ * Function to calculate ndvi_re from Sun et. al. 2019
+ * @param {ee.Image} image: The image to calculate the index for
+ * @param {String} red_edge_1_band_id: The ID of the first red-edge band to use (B6 on S2)
+ * @param {String} red_edge_2_band_id: The ID of the second red-edge band to use (B7 on S2)
+ * @return {ee.Image} The original image containing the calculated ndvi_re as a new band
+ */
+exports.calculateNDVIRE = function(image, red_edge_1_band_id, red_edge_2_band_id) {
+  var ndvire = image.expression(
+    '(RE2 - RE1) / (RE2 + RE1)', {
+      'RE1': image.select(red_edge_1_band_id),
+      'RE2': image.select(red_edge_2_band_id)
+    })
+     
+  return image.addBands(ndvire.rename('ndvi_re'))
+}
+
+/**
+ * Function to calculate the NDVI of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated NDVI band
+ */
+exports.applyNDVI = function(image) {
+  return exports.calculateNDVI(image, prefs.index_nir, prefs.index_red)
+}
+
+/**
+ * Function to calculate the NDAVI of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated NDAVI band
+ */
+exports.applyNDAVI = function(image) {
+  return exports.calculateNDAVI(image, prefs.index_nir, prefs.index_blue)
+}
+
+/**
+ * Function to calculate the WAVI of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated WAVI band
+ */
+exports.applyWAVI = function(image) {
+  return exports.calculateWAVI(image, prefs.index_nir, prefs.index_blue, prefs.l_correction_factor)
+}
+
+/**
+ * Function to calculate the NDVI45 of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated NDVI45 band
+ */
+exports.applyNDVI45 = function(image) {
+  return exports.calculateNDVI45(image, prefs.index_nir, prefs.index_red);
+}
+
+/**
+ * Function to calculate the IRECI of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated IRECI band
+ */
+exports.applyIRECI = function(image) {
+  return exports.calculateIRECI(
+    image, 
+    prefs.index_red_edge_3, 
+    prefs.index_red,
+    prefs.index_red_edge_1,
+    prefs.index_red_edge_2
+  );
+}
+
+/**
+ * Function to calculate the S2REP of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated S2REP band
+ */
+exports.applyS2REP = function(image) {
+  return exports.calculateS2REP(
+    image,
+    prefs.index_nir,
+    prefs.index_red,
+    prefs.index_red_edge_1,
+    prefs.index_red_edge_2
+  );
+}
+
+/**
+ * Function to calculate the GNDVI of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated GNDVI band
+ */
+exports.applyGNDVI = function(image) {
+  return exports.calculateGNDVI(
+    image,
+    prefs.index_green,
+    prefs.index_red_edge_3
+  );
+}
+
+/**
+ * Function to calculate the ndvi_re of an image based on preset bands
+ * @param {ee.Image} image: Sentinel-2 image
+ * @return {ee.Image} ee.Image with calculated ndvi_re band
+ */
+exports.applyNDVIRE = function(image) {
+  return exports.calculateNDVIRE(
+    image,
+    prefs.index_red_edge_2,
+    prefs.index_red_edge_3
+  );
+}
+
+/**
+ * Append Corresponding ImageCollection to Instrument Object
+ * 
+ * This function will take a given instrument description object and query the Earth Engine database for matching Images. It
+ * filters by tile, then cloud percentage, and then masks existing clouds. It outputs the instrument object with the ImageCollection
+ * appended.
+ * 
+ * NOTE: This function REQUIRES certain global variables be set! [FIXME]
+ * - prefs.tile {String} 
+ * 
+ * @param {String} instrumentObject The instrument to get the ImageCollection for
+ * @return {Object} The input instrument object with the cloud-masked ImageCollection appended as "image_collection"
+ */
+exports.getImageCollectionForInstrument = function(instrumentObject) {
+  var imageCol = ee.ImageCollection(String(instrumentObject.name))
+  .filterMetadata(String(instrumentObject.tile_metadata_layer), 'equals', String(prefs.tile))  // Filter to proper tile
+  .filter(ee.Filter.lt(String(instrumentObject.cloud_percentage_layer), Number(instrumentObject.cloud_cover_limit)))  // Filter by cloud cover
+  .map(instrumentObject.mask_function)  // Apply cloud mask
+
+  // Append the newly found ImageCollection to the object
+  instrumentObject.image_collection = imageCol
+
+  // Return the object
+  return instrumentObject
+}
+
+/**
+ * Automatically calculate Indices for ImageCollection
+ * 
+ * This is basically a wrapper function for getImageCollectionForInstrument. It is necessary to include the entire instrumentObject
+ * so that it is possible to get the variables for index_nir, index_red, index_blue, etc.
+ * 
+ * @param {Object} instrumentObject The object which contains the ImageCollection as "image_collection"
+ * @return {ee.ImageCollection} An ImageCollection containing a band for each calculated index
+ */
+exports.getAllIndices = function(instrumentObject) {
+  // Create a temporary preferences object to store params from instrumentObject
+  // [FIXME] This shouldn't technically work due to how JavaScript does scoping, though this
+  // may be different because Earth Engine may treat "map" functions differently to make things easier.
+  var prefs = {
+    "index_blue": instrumentObject.index_blue,
+    "index_green": instrumentObject.index_green,
+    "index_red": instrumentObject.index_red,
+    "index_red_edge_1": instrumentObject.index_red_edge_1,
+    "index_red_edge_2": instrumentObject.index_red_edge_2,
+    "index_red_edge_3": instrumentObject.index_red_edge_3,
+    "index_nir": instrumentObject.index_nir,
+    "l_correction_factor": instrumentObject.l_correction_factor
+  }
+
+  // Calculate the indices
+  var indicesBands = instrumentObject.image_collection
+    .map(exports.applyNDVI)   // Calculate NDVI for this ImageCollection
+    .map(exports.applyNDAVI)  // Calculate NDAVI for this ImageCollection
+    .map(exports.applyWAVI)   // Calculate WAVI for this ImageCollection
+    .map(exports.applyNDVI45) // Calculate NDVI45 for this ImageCollection
+    .map(exports.applyIRECI)  // Calculate IRECI for this ImageCollection
+    .map(exports.applyS2REP)  // Calculate S2REP for this ImageCollection
+    .map(exports.applyGNDVI)  // Calculate GNDVI for this ImageCollection
+    .map(exports.applyNDVIRE) // Calculate ndvi_re for this ImageCollection
+    .select(["NDVI", "NDAVI", "WAVI", "NDVI45", "IRECI", "S2REP", "GNDVI", "ndvi_re"])  // Select the bands created by the previous operations
+
+  // Append the newly created index bands as an ImageCollection
+  // instrumentObject.indices_layer = indicesBands
+  // print(instrumentObject)
+
+  // Return the object
+  return indicesBands
+}
+
+/**
+ * Create a chart from an index band
+ * 
+ * @param {ee.Reducer} reducer The reducer function to use to calculate values within the specified regions
+ * @param {ee.ImageCollection} imageCollection The ImageCollection with the images to use in the time series
+ * @param {String} band The band to use for the time series
+ * @param {ee.FeatureCollection} geomRegions A FeatureCollection with the polygons/geometries to use with the reducer to calculate values
+ * @param {Object} colorTable A JS object in the proper "color table" format (see examples provided)
+ * @param {String} chartTitle The title for the chart
+ * @param {String} vAxisLabe The label for the vertical axis
+ * @param {String} hAxisLabel The label for the horizontal axis
+ * @param {Number} scale (Optional) The scale for the chart
+ * @param {Number} lineWidth (Optional) The width of the lines connecting the points of the chart
+ * @param {Number} pointSize (Optional) The size of the points marking the points on the chart
+ */
+exports.chartFromIndexBand = function(reducer, imageCollection, band, geomRegions, colorTable, chartTitle, vAxisLabel, hAxisLabel, scale, lineWidth, pointSize) {
+
+  // Optional Parameters
+  scale = (typeof scale !== 'undefined') ?  scale : 200
+  lineWidth = (typeof lineWidth !== 'undefined') ? lineWidth : 1
+  pointSize = (typeof pointSize !== 'undefined') ? pointSize : 3
+
+  // Create a chart to display time series information for the given regions
+  var timeSeries = ui.Chart.image.seriesByRegion({
+    imageCollection: imageCollection,
+    regions: geomRegions,
+    reducer: reducer,
+    band: band,
+    scale: Number(scale),
+    xProperty: 'system:time_start', // We want a time series
+    seriesProperty: 'label'
+  })
+
+  // Create a connected scatterplot type chart
+  timeSeries.setChartType('ScatterChart');
+  timeSeries.setOptions({
+    title: String(chartTitle),
+    vAxis: {
+      title: String(vAxisLabel)
+    },
+    hAxis: {
+      title: String(hAxisLabel)
+    },
+    lineWidth: Number(lineWidth),
+    pointSize: Number(pointSize),
+    series: colorTable
+  })
+
+  // Return the created chart
+  return timeSeries
+
+}
+
+/**
+ * Convert Raster to Vector
+ * 
+ * Note that there MUST be at least one class given.
+ * [TODO] Make the classes parameter a more descriptive object
+ * 
+ * @param {ee.Image} raster The raster to turn into a vector
+ * @param {String} band The band of the raster to use
+ * @param {Number} scale The scale of the "pixels" you would like the raster to have
+ * @param {Array} classes A list of numeric classes in an array
+ * @param {ee.Reducer} reducer The reducer function to use
+ * @param {ee.FeatureCollection} focusAreaGeom The geometry to "clip" the raster and resulting vectorization by
+ * @return {ee.FeatureCollection} A FeatureCollection containing the new classed polygons
+ */
+exports.classRastToVec = function(raster, band, scale, classes, reducer, focusAreaGeom) {
+
+  // Select the correct band to work with
+  raster = raster.select(String(band))
+  
+  // Turn pixel classifications into zones
+  var zones = raster.gte(1)
+  for (var i = 1; i < classes.length; i++) { // Will only run if there are multiple classes
+    zones = zones.add(raster.gte(classes[i]))
+  }
+
+  // Classify
+  var allClasses = zones.addBands(raster).reduceToVectors({
+    geometry: focusAreaGeom, 
+    crs: raster.projection(),  // The crs for the output vector
+    scale: scale,  // Scale for pixels in meters
+    // maxPixels: 1e10,
+    geometryType: "polygon",
+    reducer: reducer   // Reducer to use for vectorization
+  })
+
+  // [TODO] Use filter and map to properly reclassify features in the FeatureCollection based on the user input classes
+
+  // Return a FeatureCollection with the new polygons
+  return allClasses
+}
+
+/**
+ * Add Associated FeatureCollections to ClassDescriptors
+ * 
+ * This function will actually modify the classDescriptors object itself due to a strang scope issue. Note that ee.Feature 
+ * objects with no matching identifiers will not be appended anywhere!
+ * 
+ * @param {ee.FeatureCollection} featureCollection The FeatureCollection to break up and associate
+ * @param {Object} classesPrefs An object containing preferences for the classes
+ * @param {Array} classDescriptors An array of Class Descriptor objects
+ * @return {Array} The resulting array of class descriptor objects with appended associated FeatureCollections
+ */
+exports.featCollToClassDesc = function(featureCollection, classesPrefs, classDescriptors) {
+  var classDescriptorsOut = classDescriptors.map(function(classDescriptor) {
+    // Filter the input FeatureCollection and add that as a FeatureCollection to the class descriptor object
+    var associatedFeatures = featureCollection.filter(ee.Filter.eq(
+      String(classesPrefs.featurecollection_identifier), // The identifier key as defined in the preferences
+      Number(classDescriptor.class_id)
+    ))
+
+    // Relabel the Features for Charting
+    associatedFeatures = associatedFeatures.map(function(feature) {
+      return feature.set({label: classDescriptor.name})
+    })
+
+    // Append the FeatureCollection to the object
+    classDescriptor.featureColl = associatedFeatures
+    return classDescriptor
+  })
+
+  // Return the new array of ClassDescriptors with associated FeatureCollections
+  return classDescriptorsOut
+}
+
+/**
+ * Relabel By Class
+ * 
+ * Relabel all Feature objects within a FeatureCollection based on defined class data passed in.
+ * 
+ * @param {ee.FeatureCollection} featureCollection The FeatureCollection containing the Feature objects to be relabeled
+ * @param {Object} classesPrefs An object containing preferences for the classes
+ * @param {Array} classDescriptors An array of Class Descriptor Objects
+ * @return {ee.FeatureCollection} Essentially the same FeatureCollection just with proper class-based labels
+ */
+exports.relabelFeaturesByClass = function(featureCollection, classesPrefs, classDescriptors) {
+  var outFCs = []
+
+  for (var i = 0; i < classDescriptors.length; i++) {
+    // The descriptor to work with
+    var classDescriptor = classDescriptors[i]
+
+    // Filter the input FeatureCollection and add that as a FeatureCollection to the class descriptor object
+    var associatedFeatures = featureCollection.filter(ee.Filter.eq(
+      String(classesPrefs.featurecollection_identifier), // The identifier key as defined in the preferences
+      Number(classDescriptor.class_id)
+    ))
+
+    // Relabel the Features
+    associatedFeatures = associatedFeatures.map(function(feature) {
+      return feature.set({label: classDescriptor.name})
+    })
+
+    // Push to Temp Var
+    outFCs.push(associatedFeatures)
+  }
+  
+  // Merge collected FeatureCollection objects of the temp var
+  outFCs = ee.FeatureCollection(outFCs)
+  outFCs = outFCs.flatten()
+
+  // Return the new reformed FeatureCollection
+  return outFCs
+}
+
+/**
+ * Auto-Build Classed Polygons from Classed Raster
+ * 
+ * @param {Object} classesPrefs An object containing preferences pertaining to the classification process
+ * @param {Array} classDescriptors An array containing Objects describing each class to be included in the classification process
+ * @param {ee.Image} classRaster A raster of class values
+ * @param {ee.Polygon} focusAreaGeom A geometry describing the area of focus for index analysis
+ * @return {ee.FeatureCollection} A FeatureCollection containing multiple other feature collections where each represent a classification "pack"
+ */
+exports.autoBuildClassedPolygons = function(classesPrefs, classDescriptors, classRaster, focusAreaGeom) {
+
+  // Build Required Class-Based Components
+  var classIDs = []  // An array to store class IDs that will be present within the raster
+  for (var i in classDescriptors) {
+    classIDs.push(classDescriptors[i].class_id)
+  }
+
+  // Vectorize the Raster (with class information present)
+  var classedPolyFeatColl = exports.classRastToVec(
+    classRaster, 
+    classesPrefs.classes_raster_band, 
+    classesPrefs.classes_raster_resolution,
+    classIDs,
+    classesPrefs.vectorizing_reducer, 
+    focusAreaGeom
+  )
+
+  // [DEBUG] Test appending associated FeatureClasses to the Class Descriptor objects
+  // classDescriptors = exports.featCollToClassDesc(
+  //   classedPolyFeatColl,
+  //   classesPrefs,
+  //   classDescriptors
+  // )
+
+  // Relabel Features before Charting
+  classedPolyFeatColl = exports.relabelFeaturesByClass(classedPolyFeatColl, classesPrefs, classDescriptors)
+
+  // Return a FeatureCollection of classed Polygons
+  return classedPolyFeatColl
+}
