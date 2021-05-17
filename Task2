@@ -1,5 +1,8 @@
 // ## Initial Imports and Global Variables ###
 
+// Import external scripts
+var IndicesFunc = require('users/eorsgee/helperscripts:IndicesFunctions')
+
 // Import baseline ImageCollection
 var primaryImageCollection = ee.ImageCollection('COPERNICUS/S2_SR');
 
@@ -67,6 +70,23 @@ var endDatePanel = ui.Panel({
 datesSelectorPanel.add(endDatePanel);
 endDatePanel.add(ui.Label('End Date: '));
 
+var runPanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('vertical')
+});
+mainPanel.add(runPanel);
+
+var runPanelLabel = ui.Label('Processing');
+runPanelLabel.style().set({fontSize: '20px'});
+runPanel.add(runPanelLabel);
+
+var runProcessingButton = ui.Button({
+  label: 'Run Processing',
+  onClick: function() {
+    runProcessing();
+  }
+});
+runPanel.add(runProcessingButton);
+
 // ### Create Date Selector Widgets ###
 
 // Run this function on a change of the dateSlider.
@@ -131,4 +151,62 @@ var endDateRange = prefs.date_range.evaluate(function(range) {
 // ui.root.clear();
 ui.root.add(mainPanel);
 
-// ### Set Up Processing ###
+// ### Run Processing ###
+var runProcessing = function() {
+  
+  // Mask Clouds
+  var cloudMasked = primaryImageCollection.map(IndicesFunc.maskS2clouds);
+  
+  // Compute Mosaic
+  var mosaic = cloudMasked.mosaic();
+  
+  // Create a color table for the charts
+  var color_table = {
+    0: {color: "1abc9c"},
+    1: {color: "e74c3c"},
+    2: {color: "3498db"},
+    3: {color: "9b59b6"},
+    4: {color: "34495e"},
+    5: {color: "f1c40f"},
+    6: {color: "e67e22"},
+    7: {color: "2ecc71"}
+  }
+  
+  // Calculate Indices
+  var calculatedIndices = ee.ImageCollection([
+    IndicesFunc.applyNDVI(mosaic),
+    IndicesFunc.applyNDAVI(mosaic),
+    IndicesFunc.applyWAVI(mosaic)
+  ]);
+  
+  // Merge bands into single Image
+  var mergedCalculatedIndices = calculatedIndices.iterate(function(image, previous) {
+    return ee.Image(previous).addBands(image);
+  }, ee.Image([]));
+  
+  // [DEBUG] Print calculation results
+  print(mergedCalculatedIndices);
+  
+  // Show Charts
+  var testChart = ui.Chart.image.series({
+    imageCollection: mergedCalculatedIndices,
+    region: geometry,
+    reducer: ee.Reducer.mean(),
+    xProperty: 'system:time_start'
+  })
+  
+  testChart.setChartType('ScatterChart')
+  testChart.setOptions({
+    title: '[TESTING] Indices vs. Time (Sentinel-2 L2A) for ALL selected polygons',
+    vAxis: {
+      title: 'Index Value'
+    },
+    hAxis: {
+      title: "Time"
+    },
+    lineWidth: 1,
+    pointSize: 3,
+    series: color_table
+  })
+  print(testChart);
+}
