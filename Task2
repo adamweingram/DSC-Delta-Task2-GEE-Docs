@@ -1,7 +1,7 @@
 // ## Initial Imports and Global Variables ###
 
 // Import external scripts
-var IndicesFunc = require('users/eorsgee/helperscripts:IndicesFunctions')
+var IndicesFunc = require('users/eorsgee/DSC-Delta-Task2:IndexFunctions');
 
 // Import baseline ImageCollection
 var primaryImageCollection = ee.ImageCollection('COPERNICUS/S2_SR');
