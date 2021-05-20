@@ -1,3 +1,19 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-121.85718298752852, 38.047159797045666],
+          [-121.8510031779582, 38.042698589913],
+          [-121.84971571763106, 38.0374259037627],
+          [-121.84465170701094, 38.03769630715944],
+          [-121.84808493455, 38.048849577248006]]]),
+    focusArea = 
+    /* color: #98ff00 */
+    /* shown: false */
+    ee.Geometry.Polygon(
+        [[[-122.86357421875, 38.809492348693325],
+          [-122.86357421875, 36.79582392570054],
+          [-120.7322265625, 36.79582392570054],
+          [-120.7322265625, 38.809492348693325]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 // ## Initial Imports and Global Variables ###
 
 // Import external scripts
@@ -93,9 +109,12 @@ runPanel.add(runProcessingButton);
 var showMosaic = function(range) {
   
   // Re-run filters, etc.
-  primaryImageCollection = primaryImageCollection
+  primaryImageCollection = ee.ImageCollection('COPERNICUS/S2_SR')
+                            .filterBounds(focusArea)
                             .filter(ee.Filter.date(range.start(), range.end()))
                             .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', prefs.ccLimit));
+                            
+  print(primaryImageCollection)
   
   // Compute Mosaic
   var mosaic = primaryImageCollection.mosaic();
@@ -157,10 +176,18 @@ var runProcessing = function() {
   // Mask Clouds
   var cloudMasked = primaryImageCollection.map(IndicesFunc.maskS2clouds);
   
-  // Compute Mosaic
-  var mosaic = cloudMasked.mosaic();
+  // [DEBUG] Print cloudMasked ImageCollection
+  print("Cloud Masked ImageCollection:");
+  print(cloudMasked);
   
-  // Create a color table for the charts
+  // Calculate Indices
+  var indexOutputs = cloudMasked.map(IndicesFunc.applyNDVI).map(IndicesFunc.applyNDAVI).map(IndicesFunc.applyWAVI).select(["NDVI", "NDAVI", "WAVI"]);
+  
+  // [DEBUG] Print output of calculations
+  print("Calculated Index Outputs:");
+  print(indexOutputs);
+  
+  // Create a color table for the charts & visualization
   var color_table = {
     0: {color: "1abc9c"},
     1: {color: "e74c3c"},
@@ -172,24 +199,10 @@ var runProcessing = function() {
     7: {color: "2ecc71"}
   }
   
-  // Calculate Indices
-  var calculatedIndices = ee.ImageCollection([
-    IndicesFunc.applyNDVI(mosaic),
-    IndicesFunc.applyNDAVI(mosaic),
-    IndicesFunc.applyWAVI(mosaic)
-  ]);
-  
-  // Merge bands into single Image
-  var mergedCalculatedIndices = calculatedIndices.iterate(function(image, previous) {
-    return ee.Image(previous).addBands(image);
-  }, ee.Image([]));
-  
-  // [DEBUG] Print calculation results
-  print(mergedCalculatedIndices);
-  
-  // Show Charts
+  // Reduce and Plot
+  // Test Chart for "by index" charts
   var testChart = ui.Chart.image.series({
-    imageCollection: mergedCalculatedIndices,
+    imageCollection: indexOutputs,
     region: geometry,
     reducer: ee.Reducer.mean(),
     xProperty: 'system:time_start'
@@ -197,7 +210,7 @@ var runProcessing = function() {
   
   testChart.setChartType('ScatterChart')
   testChart.setOptions({
-    title: '[TESTING] Indices vs. Time (Sentinel-2 L2A) for ALL selected polygons',
+    title: '[TESTING] Index Calculation Outputs',
     vAxis: {
       title: 'Index Value'
     },
@@ -208,5 +221,13 @@ var runProcessing = function() {
     pointSize: 3,
     series: color_table
   })
-  print(testChart);
+  print(testChart)
+  
+  // Compute Preview Mosaic
+  var mosaic = indexOutputs.mosaic();
+  
+  // Display Preview Layer
+  var visParams = {bands: ["NDVI", "NDAVI", "WAVI"], max: 1, min: -1};
+  var layer = ui.Map.Layer(mosaic, visParams, 'Index Preview');
+  Map.layers().set(1, layer);
 }
