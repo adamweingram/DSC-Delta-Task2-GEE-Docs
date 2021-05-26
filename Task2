@@ -15,6 +15,10 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
           [-120.7322265625, 38.809492348693325]]], null, false);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 // ## Initial Imports and Global Variables ###
+var classifiedMaps = {
+  "fall2019": ee.Image('users/eorsgee/Classified_Fall2019'),
+  "spring2019": ee.Image('users/eorsgee/Classified_Spring2019')
+};
 
 // Import external scripts
 var IndicesFunc = require('users/eorsgee/DSC-Delta-Task2:IndexFunctions');
@@ -85,6 +89,24 @@ var endDatePanel = ui.Panel({
 });
 datesSelectorPanel.add(endDatePanel);
 endDatePanel.add(ui.Label('End Date: '));
+
+var classificationPanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('vertical')
+});
+mainPanel.add(classificationPanel);
+var classificationLabel = ui.Label('Classification Maps:');
+classificationLabel.style().set({fontSize: '20px'});
+classificationPanel.add(classificationLabel);
+
+var classificationSelect = ui.Select({
+  items: Object.keys(classifiedMaps),
+  onChange: function(key) {
+    // [TODO] Implement classification selection function
+    print("[DEBUG] Class map changed!");
+  }
+})
+classificationSelect.setPlaceholder('Choose a classification map...');
+classificationPanel.add(classificationSelect);
 
 var runPanel = ui.Panel({
   layout: ui.Panel.Layout.flow('vertical')
