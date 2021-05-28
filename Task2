@@ -12,7 +12,8 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
         [[[-122.86357421875, 38.809492348693325],
           [-122.86357421875, 36.79582392570054],
           [-120.7322265625, 36.79582392570054],
-          [-120.7322265625, 38.809492348693325]]], null, false);
+          [-120.7322265625, 38.809492348693325]]], null, false),
+    geometry2 = /* color: #d63000 */ee.Geometry.Point([-121.84910943096135, 38.043111416848646]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 // ## Initial Imports and Global Variables ###
 var classifiedMaps = {
@@ -45,6 +46,14 @@ var prefs = {
   "preview_blue": "TCI_B",
   "l_correction_factor": 0.5,
   "date_range": ee.DateRange(globalStart, globalEnd)
+}
+
+var sites = {
+  'winterIsland': {
+    'name': 'Winter Island',
+    'location': ee.Geometry.Point([-121.84910943096135, 38.043111416848646]),
+    'zoom': 14
+  }
 }
 
 // ### Create UI Layout ###
@@ -117,10 +126,15 @@ siteSelectorLabel.style().set({fontSize: '20px'});
 siteSelectorPanel.add(siteSelectorLabel);
 
 var siteSelectorDropdown = ui.Select({
-  items: Object.keys({"Placeholder": "placeholder"}),
+  items: Object.keys(sites),
   onChange: function(key) {
     // [TODO] Implement site selection change function
     print("[DEBUG] Site changed!");
+    print(sites[key]);
+    
+    var location = sites[key].location.coordinates();
+    var zoom = sites[key].zoom;
+    Map.setCenter(ee.Number(location.get(0)).getInfo(), ee.Number(location.get(1)).getInfo(), zoom);
   },
   placeholder: "Choose a site..."
 });
