@@ -128,8 +128,6 @@ siteSelectorPanel.add(siteSelectorLabel);
 var siteSelectorDropdown = ui.Select({
   items: Object.keys(sites),
   onChange: function(key) {
-    print(sites[key]);
-    
     var location = sites[key].location.coordinates();
     var zoom = sites[key].zoom;
     Map.setCenter(ee.Number(location.get(0)).getInfo(), ee.Number(location.get(1)).getInfo(), zoom);
