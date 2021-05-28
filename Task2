@@ -94,7 +94,7 @@ var classificationPanel = ui.Panel({
   layout: ui.Panel.Layout.flow('vertical')
 });
 mainPanel.add(classificationPanel);
-var classificationLabel = ui.Label('Classification Maps:');
+var classificationLabel = ui.Label('Classification Maps');
 classificationLabel.style().set({fontSize: '20px'});
 classificationPanel.add(classificationLabel);
 
