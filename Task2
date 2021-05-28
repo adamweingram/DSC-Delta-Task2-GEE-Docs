@@ -54,6 +54,7 @@ var sites = {
     'zoom': 14
   }
 }
+var globalSite = null;
 
 // ### Create UI Layout ###
 var mainPanel = ui.Panel({
@@ -127,6 +128,10 @@ siteSelectorPanel.add(siteSelectorLabel);
 var siteSelectorDropdown = ui.Select({
   items: Object.keys(sites),
   onChange: function(key) {
+    // Update global selected site variable
+    globalSite = sites[key];
+    
+    // Move and zoom preview map
     var location = sites[key].location.coordinates();
     var zoom = sites[key].zoom;
     Map.setCenter(ee.Number(location.get(0)).getInfo(), ee.Number(location.get(1)).getInfo(), zoom);
