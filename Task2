@@ -128,8 +128,6 @@ siteSelectorPanel.add(siteSelectorLabel);
 var siteSelectorDropdown = ui.Select({
   items: Object.keys(sites),
   onChange: function(key) {
-    // [TODO] Implement site selection change function
-    print("[DEBUG] Site changed!");
     print(sites[key]);
     
     var location = sites[key].location.coordinates();
