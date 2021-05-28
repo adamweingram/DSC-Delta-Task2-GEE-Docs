@@ -12,8 +12,7 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
         [[[-122.86357421875, 38.809492348693325],
           [-122.86357421875, 36.79582392570054],
           [-120.7322265625, 36.79582392570054],
-          [-120.7322265625, 38.809492348693325]]], null, false),
-    geometry2 = /* color: #d63000 */ee.Geometry.Point([-121.84910943096135, 38.043111416848646]);
+          [-120.7322265625, 38.809492348693325]]], null, false);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 // ## Initial Imports and Global Variables ###
 var classifiedMaps = {
