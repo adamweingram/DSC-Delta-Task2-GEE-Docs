@@ -103,9 +103,9 @@ var classificationSelect = ui.Select({
   onChange: function(key) {
     // [TODO] Implement classification selection function
     print("[DEBUG] Class map changed!");
-  }
-})
-classificationSelect.setPlaceholder('Choose a classification map...');
+  },
+  placeholder: 'Choose a classification map...'
+});
 classificationPanel.add(classificationSelect);
 
 var siteSelectorPanel = ui.Panel({
