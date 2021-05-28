@@ -108,6 +108,24 @@ var classificationSelect = ui.Select({
 classificationSelect.setPlaceholder('Choose a classification map...');
 classificationPanel.add(classificationSelect);
 
+var siteSelectorPanel = ui.Panel({
+  layout: ui.Panel.Layout.flow('vertical')
+});
+mainPanel.add(siteSelectorPanel);
+var siteSelectorLabel = ui.Label('Site Selection');
+siteSelectorLabel.style().set({fontSize: '20px'});
+siteSelectorPanel.add(siteSelectorLabel);
+
+var siteSelectorDropdown = ui.Select({
+  items: Object.keys({"Placeholder": "placeholder"}),
+  onChange: function(key) {
+    // [TODO] Implement site selection change function
+    print("[DEBUG] Site changed!");
+  },
+  placeholder: "Choose a site..."
+});
+siteSelectorPanel.add(siteSelectorDropdown);
+
 var runPanel = ui.Panel({
   layout: ui.Panel.Layout.flow('vertical')
 });
