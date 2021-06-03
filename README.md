@@ -14,7 +14,6 @@
 
 ## Key Features
 
-- Written in Python using [RasterIO](https://github.com/mapbox/rasterio) and [GDAL](https://gdal.org/) packages
 - Employs [Google Earth Engine's](https://earthengine.google.com/) JavaScript API
 - Focused on [Sentinel-2 data](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR) from Earth Engine's extensive catalog
 - Allows researchers to export time series tables for further analysis outside of the App
