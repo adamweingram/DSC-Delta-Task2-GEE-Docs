@@ -246,6 +246,19 @@ var runProcessing = function() {
   print("Calculated Index Outputs:");
   print(indexOutputs);
   
+  // Vectorize classification raster
+  var classMapAsInt = globalClassMap.uint16();
+  var vectorClassFeatureCollection = classMapAsInt.reduceToVectors({
+    geometry: globalSite.geometry,  // Use the user-selected site geometry
+    scale: 10,                      // Set according to sensor for now
+    geometryType: "polygon",
+    eightConnected: true,           // Diagonally-connected pixels should be considered adjacent
+    labelProperty: "class",         // The values of the class raster represent the pixel's class
+    crs: classMapAsInt.projection(),
+    maxPixels: 10e8                 // Allow reduction of more pixels than is allowed by default
+  });
+  print("[DEBUG] Calculated vector classification FeatureCollection: ", vectorClassFeatureCollection);
+  
   // Create a color table for the charts & visualization
   var color_table = {
     0: {color: "1abc9c"},
