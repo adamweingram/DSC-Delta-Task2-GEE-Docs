@@ -21,6 +21,8 @@ var classifiedMaps = {
   "fall2018": ee.Image('users/eorsgee/C26hybrid_20181007_Class5H_wwcropy')
 };
 
+var globalClassMap = null;
+
 // Import external scripts
 var IndicesFunc = require('users/eorsgee/DSC-Delta-Task2:IndexFunctions');
 
@@ -111,8 +113,9 @@ classificationPanel.add(classificationLabel);
 var classificationSelect = ui.Select({
   items: Object.keys(classifiedMaps),
   onChange: function(key) {
-    // [TODO] Implement classification selection function
-    print("[DEBUG] Class map changed!");
+    // Change the global classification map
+    globalClassMap = classifiedMaps[key];
+    print("[DEBUG] Class map changed: ", globalClassMap);
   },
   placeholder: 'Choose a classification map...'
 });
