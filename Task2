@@ -236,15 +236,13 @@ var runProcessing = function() {
   var cloudMasked = primaryImageCollection.map(IndicesFunc.maskS2clouds);
   
   // [DEBUG] Print cloudMasked ImageCollection
-  print("Cloud Masked ImageCollection:");
-  print(cloudMasked);
+  print("[DEBUG] Cloud Masked ImageCollection: ", cloudMasked);
   
   // Calculate Indices
   var indexOutputs = cloudMasked.map(IndicesFunc.applyNDVI).map(IndicesFunc.applyNDAVI).map(IndicesFunc.applyWAVI).select(["NDVI", "NDAVI", "WAVI"]);
   
   // [DEBUG] Print output of calculations
-  print("Calculated Index Outputs:");
-  print(indexOutputs);
+  print("[DEBUG] Calculated Index Outputs: ", indexOutputs);
   
   // Vectorize classification raster
   var classMapAsInt = globalClassMap.uint16();
