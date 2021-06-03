@@ -4,6 +4,8 @@
     A Google Earth Engine App that allows researchers to visualize Delta restoration site phenology alongside temporally aligned satellite imagery and index products. 
 </div>
 
+![screenshot of software](media/SoftwareScreenshot.png)
+
 <p align="center">
     <a href="#key-features">Key Features</a> •
     <a href="#how-to-use">How to Use</a> •
@@ -25,7 +27,8 @@ There are some steps that are important
 1. First, navigate to the Earth Engine scripting interface by visiting [https://code.earthengine.google.com](https://code.earthengine.google.com/) in your web browser.
     - *Make sure to sign in using your Google Earth Engine-enabled account!*
 2. Find the `users/eorsgee/DSC-Delta-Task2` repository in the 'Scripts' tab. Open the `Task2` script.
-3. Verify that the `prefs` object at line `20` of the script contains the correct values for your needs. If the object contains suitable values, it does not need to be changed. An example of a `prefs` object can be seen below:
+    ![Step 2](media/Step2-FindRepository.png)
+3. Verify that the `prefs` object at line `23` of the script contains the correct values for your needs. If the object contains suitable values, it does not need to be changed. An example of a `prefs` object can be seen below:
     ```javascript
     var prefs = {
         "tile": '10SFH',            // The Sentinel-2 Tile to focus on
@@ -41,13 +44,20 @@ There are some steps that are important
         "date_range": ee.DateRange(globalStart, globalEnd)  // Ignore; this can be set in the UI
     };
     ```
+    ![Step 3](media/Step3-EditPrefs.png)
 4. Click the "Run" button above the script text editor pane.
+    ![Step 4](media/Step4-ClickRun.png)
 5. Using the UI that appears on the right side of the map pane, specify **cloud cover**, the **date range**, and the **target restoraion site**.
+    ![Step 5](media/Step5-GUISettings.png)
     - As dates and other parameters are changed using the UI, the preview imagery in the map pane will automatically be refreshed and updated.
+    ![Step 5: TCI Preview](media/Step5-GUIImgPreview.png)
 6. Click the "Run Processing" button.
+    ![Step 6](media/Step6-RunButton.png)
 7. A chart visualizing the requested analysis will appear in the "console" tab.
     - To export a table, click on the boxed arrow in the top right corner of the chart.
 8. The map preview will show the results of the calculated indices. 
+    ![Step 8](media/Step7-8-Charts-Output.png)
+9. Done!
 
 ## Warnings, Tips, and Workarounds
 - Google Earth Engine aggressively rate-limits larger operations, especially those that involve running reduce operations using large vectors. To work around this issue, each restoration site analysis task should be run independently so as not to trigger the rate limiting.
