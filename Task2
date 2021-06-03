@@ -1,5 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+var winterIslandPolygon = /* color: #d63000 */ee.Geometry.Polygon(
         [[[-121.85718298752852, 38.047159797045666],
           [-121.8510031779582, 38.042698589913],
           [-121.84971571763106, 38.0374259037627],
@@ -54,6 +54,7 @@ var sites = {
   'winterIsland': {
     'name': 'Winter Island',
     'location': ee.Geometry.Point([-121.84910943096135, 38.043111416848646]),
+    'geometry': winterIslandPolygon,
     'zoom': 14
   }
 }
@@ -136,8 +137,8 @@ var siteSelectorDropdown = ui.Select({
     globalSite = sites[key];
     
     // Move and zoom preview map
-    var location = sites[key].location.coordinates();
-    var zoom = sites[key].zoom;
+    var location = globalSite.location.coordinates();
+    var zoom = globalSite.zoom;
     Map.setCenter(ee.Number(location.get(0)).getInfo(), ee.Number(location.get(1)).getInfo(), zoom);
   },
   placeholder: "Choose a site..."
@@ -261,7 +262,7 @@ var runProcessing = function() {
   // Test Chart for "by index" charts
   var testChart = ui.Chart.image.series({
     imageCollection: indexOutputs,
-    region: geometry,
+    region: globalSite.geometry,
     reducer: ee.Reducer.mean(),
     xProperty: 'system:time_start'
   })
