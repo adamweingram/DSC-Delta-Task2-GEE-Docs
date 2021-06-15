@@ -22,7 +22,7 @@
 
 ## How to Use
 
-There are some steps that are important 
+The important parts of the script (VI code, etc.) are generally well-documented, so it is recommended that you take a look at the code. Below is a simple guide to help you get started with running simple processing tasks. 
 
 1. First, navigate to the Earth Engine scripting interface by visiting [https://code.earthengine.google.com](https://code.earthengine.google.com/) in your web browser.
     - *Make sure to sign in using your Google Earth Engine-enabled account!*
@@ -41,7 +41,9 @@ There are some steps that are important
         "preview_green": "TCI_G",   // Preview imagery green band
         "preview_blue": "TCI_B",    // Preview imagery blue band
         "l_correction_factor": 0.5, // Default "L correction factor" that the vegetation index algorithms will use
-        "date_range": ee.DateRange(globalStart, globalEnd)  // Ignore; this can be set in the UI
+        "date_range": ee.DateRange(globalStart, globalEnd),  // Ignore; this can be set in the UI
+        "previewDateSliderGranularity": 10,                  // Aligns with Sentinel-2 "max" revisit time (~10 days)
+        "filterCloudCoverForPreviewImagery": false,          // Whether or not the preview imagery is filtered by cloud cover too
     };
     ```
     ![Step 3](media/Step3-EditPrefs.png)
@@ -123,8 +125,7 @@ There are some steps that are important
    
    // ...
    ```
-   *Note that the value associated with `name` (`"SAVI"`) is **exactly** the same as the name of the calculated band from step 2!
-   
+   *Note that the value associated with `name` (`"SAVI"`) is **exactly** the same as the name of the calculated band from step 2!* 
 5. **Verify that your indices have been added by running the script:**
    To make sure that all the correct changes were made, run the script and use the UI to select the index you recently added.
 
@@ -132,7 +133,7 @@ There are some steps that are important
 - Google Earth Engine aggressively rate-limits larger operations, especially those that involve running reduce operations using large vectors. To work around this issue, each restoration site analysis task should be run independently so as not to trigger the rate limiting.
 
 ## The User Interface
-[TODO] Write docs or the UI
+[TODO] Write docs for the UI
 
 ## Modification of the Code
 [TODO] Write docs for the code
