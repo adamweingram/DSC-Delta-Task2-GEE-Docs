@@ -61,6 +61,14 @@ The important parts of the script (VI code, etc.) are generally well-documented,
     ![Step 8](media/Step7-8-Charts-Output.png)
 9. Done!
 
+## Warnings, Tips, and Workarounds
+- Google Earth Engine aggressively rate-limits larger operations, especially those that involve running reduce operations using large vectors. To work around this issue, each restoration site analysis task should be run independently so as not to trigger the rate limiting.
+
+## The User Interface
+[TODO] Write docs for the UI
+
+## Modification of the Code
+
 ### Adding Vegetation Indices
 1. **Become familiar with the existing code and basic index subroutine requirements:**
    It can be helpful to understand how existing vegetation indices have been implemented before starting the process of writing new index subroutines. By default, all vegetation index code is stored in a separate "IndexFunctions" JavaScript file located in the same directory as the main "Task2" script. These functions are then imported into the "Task2" script using the `require` syntax provided by Google Earth Engine. All index calculating functions have a set of default values along with wrapper functions for ease of use when mapping across datasets. Note that these wrapper functions all prefixed with "apply", e.g. `applyNDVI`. These wrapper functions are called by the main processing routine of the "Task2" script. The simplest and easiest vegetation index calculation function is `calculateNDVI`. It can be used as a model for other vegetation index functions.
@@ -128,13 +136,3 @@ The important parts of the script (VI code, etc.) are generally well-documented,
    *Note that the value associated with `name` (`"SAVI"`) is **exactly** the same as the name of the calculated band from step 2!* 
 5. **Verify that your indices have been added by running the script:**
    To make sure that all the correct changes were made, run the script and use the UI to select the index you recently added.
-
-## Warnings, Tips, and Workarounds
-- Google Earth Engine aggressively rate-limits larger operations, especially those that involve running reduce operations using large vectors. To work around this issue, each restoration site analysis task should be run independently so as not to trigger the rate limiting.
-
-## The User Interface
-[TODO] Write docs for the UI
-
-## Modification of the Code
-[TODO] Write docs for the code
-
